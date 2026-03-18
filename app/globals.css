@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --background: #EAE0CF;
+  --foreground: #213448;
+  --card: #ffffff;
+  /* We'll use white for the cards to pop against the cream bg */
+  --card-foreground: #213448;
+  --primary: #547792;
+  --secondary: #94B4C1;
+  --accent: #94B4C1;
+  --border: #547792;
+  --input: #ffffff;
+  --ring: #94B4C1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
