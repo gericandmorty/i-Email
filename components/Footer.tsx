@@ -21,13 +21,13 @@ export const Footer: React.FC<FooterProps> = ({ className }) => {
                     <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#213448] mb-1">Contact me:</span>
                     <div className="flex gap-8">
                         <a
-                            href="https://github.com/gggggeric"
+                            href="https://github.com/gericandmorty"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-[#94B4C1] hover:text-[#213448] transition-all group"
                         >
                             <Github size={18} className="group-hover:scale-110 transition-transform" />
-                            <span className="text-xs font-black uppercase tracking-widest">gggggeric</span>
+                            <span className="text-xs font-black uppercase tracking-widest">gericandmorty</span>
                         </a>
                         <a
                             href="https://web.facebook.com/geric.morit.t/"
