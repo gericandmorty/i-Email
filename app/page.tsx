@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from 'react';
 import EmailSeeder from "@/components/EmailSeeder";
@@ -28,7 +28,7 @@ export default function Home() {
         setUser(authenticatedUser);
         // Pre-fetch accounts for EmailSeeder, but don't block the UI mount
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+          const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           const url = new URL(`${baseUrl}/auth/accounts`);
           const currentDeviceId = localStorage.getItem('iEmail_deviceId');
           if (currentDeviceId) {
@@ -38,9 +38,13 @@ export default function Home() {
           if (res.ok) {
             const data = await res.json();
             setInitialAccounts(data.accounts || []);
+          } else {
+            // If backend doesn't recognize the user or error occurs, don't auto-login
+            setUser(null);
           }
         } catch (e) {
           console.error("Gateway account fetch error:", e);
+          setUser(null);
         }
       } else {
         setUser(null);
@@ -91,6 +95,10 @@ export default function Home() {
             const data = await res.json();
             setInitialAccounts(data.accounts || []);
           }
+        } else {
+          // If sync fails, the user is not truly authenticated for our app
+          alert('Sync protocol failed. Please try again.');
+          handleLogout();
         }
       }
     } catch (error) {
