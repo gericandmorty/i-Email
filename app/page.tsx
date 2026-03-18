@@ -97,7 +97,14 @@ export default function Home() {
           }
         } else {
           // If sync fails, the user is not truly authenticated for our app
-          alert('Sync protocol failed. Please try again.');
+          let errorMsg = 'Sync protocol failed. Please try again.';
+          try {
+            const errorData = await syncResponse.json();
+            if (errorData.message) errorMsg = `Sync failed: ${errorData.message}`;
+          } catch (e) {
+            errorMsg = `Sync failed with status: ${syncResponse.status}`;
+          }
+          alert(errorMsg);
           handleLogout();
         }
       }
