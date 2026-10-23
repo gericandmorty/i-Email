@@ -1,30 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #EAE0CF;
-  --foreground: #213448;
-  --card: #ffffff;
-  /* We'll use white for the cards to pop against the cream bg */
-  --card-foreground: #213448;
-  --primary: #547792;
-  --secondary: #94B4C1;
-  --accent: #94B4C1;
-  --border: #547792;
-  --input: #ffffff;
-  --ring: #94B4C1;
+  --background: #0D1117;
+  --surface: #161B22;
+  --surface-elevated: #21262D;
+  --border: #30363D;
+  --border-muted: #21262D;
+  --foreground: #E6EDF3;
+  --text-muted: #8B949E;
+  --accent: #58A6FF;
+  --accent-hover: #79B8FF;
+  --primary-action: #238636;
+  --primary-action-hover: #2EA043;
+  --danger: #F85149;
+  --warning: #D29922;
+  --success: #3FB950;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-gh-bg: #0D1117;
+  --color-gh-surface: #161B22;
+  --color-gh-elevated: #21262D;
+  --color-gh-border: #30363D;
+  --color-gh-border-muted: #21262D;
+  --color-gh-text: #E6EDF3;
+  --color-gh-muted: #8B949E;
+  --color-gh-accent: #58A6FF;
+  --color-gh-primary: #238636;
+  --color-gh-primary-hover: #2EA043;
+  --color-gh-danger: #F85149;
+  --color-gh-warning: #D29922;
+  --color-gh-success: #3FB950;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0D1117;
+  color: #E6EDF3;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom GitHub-style scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D1117;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B949E;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #58A6FF;
+}
+
+/* Focus outline */
+*:focus-visible {
+  outline: 2px solid #58A6FF;
+  outline-offset: 1px;
 }

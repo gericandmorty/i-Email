@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 interface ProtocolLoaderProps {
     label?: string;
@@ -17,80 +17,22 @@ export const ProtocolLoader: React.FC<ProtocolLoaderProps> = ({
 }) => {
     return (
         <div className={cn(
-            "flex flex-col items-center justify-center transition-all duration-700",
-            variant === 'overlay' ? "fixed inset-0 bg-[#EAE0CF]/95 backdrop-blur-xl z-[9999]" : "w-full py-8",
+            "flex flex-col items-center justify-center transition-all",
+            variant === 'overlay' ? "fixed inset-0 bg-[#0D1117]/80 backdrop-blur-sm z-[9999]" : "w-full py-8",
             className
         )}>
-            <div className="relative w-24 h-24">
-                {/* Outer Rotating Square - Technical Frame */}
-                <motion.div
-                    className="absolute inset-0 border-2 border-[#213448]/10 rounded-2xl"
-                    animate={{ rotate: 180 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                />
-
-                {/* Inner Scanning Bar */}
-                <motion.div
-                    className="absolute top-0 left-0 right-0 h-[2px] bg-[#94B4C1] shadow-[0_0_15px_rgba(148,180,193,0.5)] z-10"
-                    animate={{ top: ['0%', '100%', '0%'] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                />
-
-                {/* Geometric Core */}
-                <div className="absolute inset-4 flex items-center justify-center">
-                    <motion.div
-                        className="w-12 h-12 border-4 border-[#213448] border-t-transparent rounded-full shadow-2xl"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-                    />
-                </div>
-
-                {/* Corner Accents */}
-                {[0, 90, 180, 270].map((deg) => (
-                    <motion.div
-                        key={deg}
-                        className="absolute w-2 h-2 bg-[#213448]"
-                        style={{
-                            left: deg === 0 || deg === 270 ? -1 : 'auto',
-                            right: deg === 90 || deg === 180 ? -1 : 'auto',
-                            top: deg === 0 || deg === 90 ? -1 : 'auto',
-                            bottom: deg === 180 || deg === 270 ? -1 : 'auto',
-                        }}
-                        animate={{ scale: [1, 1.5, 1] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: deg / 360 }}
-                    />
-                ))}
+            <div className="relative flex items-center justify-center w-12 h-12 rounded-lg bg-[#161B22] border border-[#30363D] shadow-sm">
+                <Loader2 className="w-5 h-5 text-[#58A6FF] animate-spin" />
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-2">
-                <motion.span
-                    className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-[#213448] text-center px-4"
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                >
+            <div className="mt-4 flex flex-col items-center gap-1.5">
+                <span className="text-xs font-mono font-medium text-[#E6EDF3] tracking-wide">
                     {label}
-                </motion.span>
-                <div className="flex gap-1.5">
-                    {[0, 1, 2].map((i) => (
-                        <motion.div
-                            key={i}
-                            className="w-1 h-1 bg-[#94B4C1] rounded-full"
-                            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                        />
-                    ))}
-                </div>
+                </span>
+                <span className="text-[11px] font-mono text-[#8B949E]">
+                    iEmail system service
+                </span>
             </div>
-
-            {variant === 'overlay' && (
-                <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                    <div className="px-6 py-2 border border-[#213448]/10 rounded-full">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#94B4C1]">
-                            iEmail Engine
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

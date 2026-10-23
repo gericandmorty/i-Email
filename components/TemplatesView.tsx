@@ -1,10 +1,19 @@
-﻿import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Button, Input, Label } from './ui-components';
+import React, { useState, useEffect } from 'react';
+import {
+    Plus,
+    Trash2,
+    Search,
+    FileText,
+    Loader2,
+    Save,
+    Send
+} from 'lucide-react';
+
+import { Button, Input, Card, Badge } from './ui-components';
 import { EmailEditor } from './EmailEditor';
-import { LayoutDashboard, Plus, Trash2, Search, FileText, Loader2, Save, Sparkles, ChevronDown, ChevronRight, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useScrollLock } from '@/lib/use-scroll-lock';
 
 interface Template {
     id: string;
@@ -25,9 +34,7 @@ interface TemplatesViewProps {
 export const TemplatesView: React.FC<TemplatesViewProps> = ({
     senderEmail,
     onUseTemplate,
-    placeholders = [],
-    mapping = { email: '', name: '' },
-    onMappingChange
+    placeholders = []
 }) => {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +46,22 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [attachments, setAttachments] = useState<File[]>([]);
     const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+
+    // Zero-shift body scroll lock for delete modal
+    useScrollLock(showDeleteModal);
+
+    // Escape listener for delete modal
+    useEffect(() => {
+        if (!showDeleteModal) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowDeleteModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showDeleteModal]);
 
     // Initial Fetch
     const fetchTemplates = async () => {
@@ -51,7 +72,10 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
             const res = await fetch(`${baseUrl}/templates?email=${senderEmail}`);
             if (res.ok) {
                 const data = await res.json();
-                setTemplates(data.templates);
+                setTemplates(data.templates || []);
+                if (!selectedTemplate && data.templates?.length > 0) {
+                    setSelectedTemplate(data.templates[0]);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch templates", error);
@@ -64,7 +88,6 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
         fetchTemplates();
     }, [senderEmail]);
 
-    // Sync selected template to draft when selection changes
     useEffect(() => {
         if (selectedTemplate) {
             setDraftTemplate({ ...selectedTemplate });
@@ -74,7 +97,6 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
         }
     }, [selectedTemplate]);
 
-    // Handle Draft Field Changes
     const updateDraft = (field: keyof Template, value: string) => {
         if (!draftTemplate) return;
         setDraftTemplate(prev => prev ? ({ ...prev, [field]: value }) : null);
@@ -100,9 +122,8 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
             });
 
             if (res.ok) {
-                // Update local list
                 setTemplates(prev => prev.map(t => t.id === draftTemplate.id ? draftTemplate : t));
-                setSelectedTemplate(draftTemplate); // Re-sync
+                setSelectedTemplate(draftTemplate);
                 setHasUnsavedChanges(false);
             } else {
                 const err = await res.text();
@@ -115,57 +136,72 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
         }
     };
 
-    // Create New Template (Create Placeholder -> Select it)
+    // Create New Template
     const handleCreateNew = async () => {
         if (!senderEmail) return;
-        setIsLoading(true);
-        try {
-            const newTemp = {
-                name: "Untitled Blueprint",
-                subject: "New Subject",
-                body: "<p>Start writing...</p>"
-            };
+        const newTemplateName = prompt("Enter a name for this template:", "My New Template") || "My New Template";
+        const placeholder: Template = {
+            id: '',
+            name: newTemplateName,
+            subject: 'New Email Subject',
+            body: '<p>Hello {{name}},</p><p>Write your message here.</p>',
+            created_at: new Date().toISOString()
+        };
 
-            const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        setIsSaving(true);
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        try {
             const res = await fetch(`${baseUrl}/templates`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: senderEmail,
-                    ...newTemp
+                    name: placeholder.name,
+                    subject: placeholder.subject,
+                    body: placeholder.body
                 })
             });
 
             if (res.ok) {
                 const data = await res.json();
-                await fetchTemplates(); // Refresh list to get the new one including ID
+                placeholder.id = data.id;
+                setTemplates(prev => [placeholder, ...prev]);
+                setSelectedTemplate(placeholder);
             }
         } catch (error) {
-            console.error(error);
+            console.error("Failed to create template", error);
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
 
-    const handleDelete = (template: Template, e: React.MouseEvent) => {
+    // Delete Template
+    const handleDeleteClick = (template: Template, e: React.MouseEvent) => {
         e.stopPropagation();
         setTemplateToDelete(template);
         setShowDeleteModal(true);
     };
 
-    const performDelete = async () => {
+    const confirmDelete = async () => {
         if (!templateToDelete || !senderEmail) return;
-
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
         try {
-            await fetch(`${baseUrl}/templates/${templateToDelete.id}?email=${senderEmail}`, { method: 'DELETE' });
-            setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
-            if (selectedTemplate?.id === templateToDelete.id) setSelectedTemplate(null);
-            setShowDeleteModal(false);
-            setTemplateToDelete(null);
+            const res = await fetch(`${baseUrl}/templates/${templateToDelete.id}?email=${senderEmail}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
+                if (selectedTemplate?.id === templateToDelete.id) {
+                    const remaining = templates.filter(t => t.id !== templateToDelete.id);
+                    setSelectedTemplate(remaining.length > 0 ? remaining[0] : null);
+                }
+            }
         } catch (error) {
             console.error("Failed to delete template", error);
-            alert("Failed to delete template. Please try again.");
+        } finally {
+            setShowDeleteModal(false);
+            setTemplateToDelete(null);
         }
     };
 
@@ -175,276 +211,234 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({
     );
 
     return (
-        <div className="h-full flex flex-col space-y-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-6">
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#30363D] pb-4">
                 <div>
-                    <h2 className="text-3xl font-black text-[#213448] uppercase tracking-tighter flex items-center gap-3">
-                        <LayoutDashboard size={32} className="text-[#94B4C1]" />
-                        Template Library
+                    <h2 className="text-base font-semibold text-[#E6EDF3] flex items-center gap-2">
+                        <span>Saved Templates</span>
+                        <Badge variant="muted" className="text-[11px]">
+                            {templates.length} templates
+                        </Badge>
                     </h2>
-                    <p className="text-xs text-[#94B4C1] font-bold uppercase tracking-widest mt-1">
-                        Manage your email blueprints for {senderEmail || 'Guest'}
+                    <p className="text-xs text-[#8B949E]">
+                        Create, save, and reuse email messages whenever you need them.
                     </p>
                 </div>
+
                 <Button
+                    variant="primary"
+                    size="sm"
                     onClick={handleCreateNew}
-                    className="bg-[#213448] text-[#EAE0CF] hover:bg-[#547792] rounded-2xl h-12 shadow-xl"
-                    disabled={!senderEmail || isLoading}
+                    disabled={!senderEmail}
+                    className="text-xs flex items-center gap-1.5 self-start sm:self-auto"
                 >
-                    {isLoading ? <Loader2 className="animate-spin" /> : <Plus size={20} className="mr-2" />}
-                    CREATE NEW
+                    <Plus size={13} />
+                    <span>New Template</span>
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full min-h-0">
-                {/* List Column */}
-                <div className="lg:col-span-4 flex flex-col gap-4 min-h-0 h-full">
+            {/* Split View: Left list, Right detail */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left: Template List */}
+                <div className="lg:col-span-4 space-y-3">
                     <div className="relative">
-                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94B4C1]" />
+                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B949E]" />
                         <Input
-                            placeholder="SEARCH TEMPLATES..."
+                            placeholder="Search templates..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-white pl-12 h-12 rounded-2xl border-none shadow-sm focus:ring-1 focus:ring-[#94B4C1]"
+                            className="h-8 pl-8 text-xs bg-[#161B22] border-[#30363D]"
                         />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                    <div className="space-y-2 max-h-[640px] overflow-y-auto custom-scrollbar">
                         {isLoading ? (
-                            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#94B4C1]" /></div>
+                            <div className="p-8 text-center text-xs text-[#8B949E]">
+                                <Loader2 size={16} className="animate-spin mx-auto mb-2 text-[#58A6FF]" />
+                                Loading templates...
+                            </div>
                         ) : filteredTemplates.length === 0 ? (
-                            <div className="p-8 text-center border-2 border-dashed border-[#547792]/10 rounded-2xl text-[#94B4C1] font-bold text-xs uppercase tracking-widest bg-white/50">
-                                No templates found.
+                            <div className="p-8 text-center border border-dashed border-[#30363D] rounded-lg text-xs text-[#8B949E] bg-[#161B22]">
+                                {searchQuery ? "No matching templates found" : "No templates saved yet. Click 'New Template' to create one."}
                             </div>
                         ) : (
-                            filteredTemplates.map(t => (
-                                <motion.div
-                                    key={t.id}
-                                    layoutId={t.id}
-                                    onClick={() => setSelectedTemplate(t)}
-                                    className={cn(
-                                        "p-5 rounded-2xl cursor-pointer transition-all border-2 group relative",
-                                        selectedTemplate?.id === t.id
-                                            ? "bg-[#213448] border-[#213448] text-[#EAE0CF] shadow-xl"
-                                            : "bg-white border-transparent hover:border-[#94B4C1]/20 text-[#213448] hover:shadow-lg"
-                                    )}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-black text-sm uppercase tracking-tight truncate pr-8">{t.name}</h3>
-                                    </div>
-                                    <p className={cn("text-[10px] uppercase tracking-widest truncate", selectedTemplate?.id === t.id ? "text-[#94B4C1]" : "text-[#94B4C1]")}>
-                                        {t.subject}
-                                    </p>
-                                    <button
-                                        onClick={(e) => handleDelete(t, e)}
+                            filteredTemplates.map((template) => {
+                                const isSelected = selectedTemplate?.id === template.id;
+                                return (
+                                    <div
+                                        key={template.id}
+                                        onClick={() => setSelectedTemplate(template)}
                                         className={cn(
-                                            "absolute top-4 right-4 p-2 rounded-xl transition-all",
-                                            selectedTemplate?.id === t.id
-                                                ? "bg-[#94B4C1]/20 text-[#EAE0CF] hover:bg-red-500/40"
-                                                : "bg-[#213448]/5 text-[#94B4C1] hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100"
+                                            "p-3 rounded-md border text-left cursor-pointer transition-colors relative group",
+                                            isSelected
+                                                ? "bg-[#21262D] border-[#58A6FF]/50 text-[#E6EDF3]"
+                                                : "bg-[#161B22] border-[#30363D] hover:border-[#8B949E]/40 text-[#8B949E]"
                                         )}
-                                        title="Delete Blueprint"
                                     >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </motion.div>
-                            ))
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-xs font-semibold text-[#E6EDF3] truncate">
+                                                    {template.name}
+                                                </div>
+                                                <div className="text-[11px] text-[#8B949E] truncate mt-0.5">
+                                                    {template.subject || "No subject set"}
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={(e) => handleDeleteClick(template, e)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#30363D] text-[#8B949E] hover:text-[#F85149] transition-all"
+                                                title="Delete template"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 </div>
 
-                {/* Editor Column (Right Pane) */}
-                <div className="lg:col-span-8 h-full min-h-0">
-                    <AnimatePresence mode="wait">
-                        {draftTemplate ? (
-                            <motion.div
-                                key={draftTemplate.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="h-full bg-white rounded-[32px] shadow-xl flex flex-col border border-[#213448]/5 overflow-hidden"
-                            >
-                                {/* Header / Controls */}
-                                <div className="p-6 border-b border-[#547792]/5 bg-gradient-to-r from-white to-[#EAE0CF]/20 flex flex-col gap-4">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                        <div className="flex-1 w-full sm:w-auto">
-                                            <Input
-                                                value={draftTemplate.name}
-                                                onChange={(e) => updateDraft('name', e.target.value)}
-                                                className="text-2xl font-black text-[#213448] uppercase tracking-tighter border-none bg-transparent h-auto p-0 focus-visible:ring-0 placeholder:text-[#213448]/20"
-                                                placeholder="UNTITLED BLUEPRINT"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {hasUnsavedChanges && (
-                                                <Button
-                                                    onClick={handleSaveChanges}
-                                                    disabled={isSaving}
-                                                    className="bg-[#213448] text-[#EAE0CF] hover:bg-[#547792] rounded-xl h-10 px-4 shadow-lg"
-                                                >
-                                                    {isSaving ? <Loader2 className="animate-spin mr-2" size={16} /> : <Save className="mr-2" size={16} />}
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Save Changes</span>
-                                                </Button>
-                                            )}
-                                            {onUseTemplate && (
-                                                <Button
-                                                    onClick={() => onUseTemplate(draftTemplate)}
-                                                    className="bg-[#94B4C1] text-[#EAE0CF] hover:bg-[#94B4C1]/90 rounded-xl h-10 px-4 shadow-lg shadow-[#94B4C1]/20"
-                                                >
-                                                    <span className="font-black uppercase tracking-widest text-[10px] flex items-center">
-                                                        Use This <ChevronRight size={14} className="ml-1" />
-                                                    </span>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Subject and Metadata */}
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <span className="bg-[#213448] text-[#EAE0CF] px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0">Subject</span>
-                                            <Input
-                                                value={draftTemplate.subject}
-                                                onChange={(e) => updateDraft('subject', e.target.value)}
-                                                className="flex-1 font-bold text-[#547792] border-0 border-b-2 border-[#547792]/10 bg-transparent rounded-none px-0 h-8 focus-visible:ring-0 focus-visible:border-[#94B4C1]"
-                                                placeholder="Email Subject Line"
-                                            />
-                                        </div>
-
-                                        {/* Mapping Selector */}
-                                        {onMappingChange && (
-                                            <div className="flex flex-col sm:flex-row gap-4">
-                                                <div className="flex items-center gap-3 opacity-80 hover:opacity-100 transition-opacity flex-1">
-                                                    <Label htmlFor="to-email-view" className="text-[#94B4C1] font-black uppercase tracking-[0.2em] text-[8px] whitespace-nowrap shrink-0">Recipient Email:</Label>
-                                                    <div className="relative flex-1 max-w-xs">
-                                                        <select
-                                                            id="to-email-view"
-                                                            value={mapping.email}
-                                                            onChange={(e) => onMappingChange({ ...mapping, email: e.target.value })}
-                                                            className="w-full pl-2 pr-6 h-6 text-[10px] font-bold bg-transparent border-none outline-none text-[#213448] cursor-pointer hover:text-[#94B4C1]"
-                                                        >
-                                                            <option value="" disabled>Select Column</option>
-                                                            {placeholders.map((header) => (
-                                                                <option key={header} value={header}>{header}</option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[#213448] pointer-events-none">
-                                                            <ChevronDown size={12} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-3 opacity-80 hover:opacity-100 transition-opacity flex-1">
-                                                    <Label htmlFor="to-name-view" className="text-[#94B4C1] font-black uppercase tracking-[0.2em] text-[8px] whitespace-nowrap shrink-0">Recipient Name:</Label>
-                                                    <div className="relative flex-1 max-w-xs">
-                                                        <select
-                                                            id="to-name-view"
-                                                            value={mapping.name}
-                                                            onChange={(e) => onMappingChange({ ...mapping, name: e.target.value })}
-                                                            className="w-full pl-2 pr-6 h-6 text-[10px] font-bold bg-transparent border-none outline-none text-[#213448] cursor-pointer hover:text-[#94B4C1]"
-                                                        >
-                                                            <option value="" disabled>Select Column</option>
-                                                            {placeholders.map((header) => (
-                                                                <option key={header} value={header}>{header}</option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[#213448] pointer-events-none">
-                                                            <ChevronDown size={12} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                {/* Right: Template Detail & Editor */}
+                <div className="lg:col-span-8">
+                    {draftTemplate ? (
+                        <Card className="p-4 sm:p-6 bg-[#161B22] border-[#30363D] space-y-4">
+                            {/* Editor Header Bar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363D]">
+                                <div className="space-y-1 flex-1 min-w-0">
+                                    <input
+                                        type="text"
+                                        value={draftTemplate.name}
+                                        onChange={(e) => updateDraft('name', e.target.value)}
+                                        className="text-sm font-semibold text-[#E6EDF3] bg-transparent border-none p-0 focus:outline-none focus:ring-0 w-full"
+                                        placeholder="Template name..."
+                                    />
+                                    <div className="flex items-center gap-2 text-[11px] text-[#8B949E]">
+                                        {hasUnsavedChanges ? (
+                                            <span className="text-[#D29922]">● Unsaved changes</span>
+                                        ) : (
+                                            <span>Saved</span>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Editor Area */}
-                                <div className="flex-1 overflow-hidden flex flex-col">
-                                    <EmailEditor
-                                        value={draftTemplate.body}
-                                        onChange={(val) => updateDraft('body', val)}
-                                        className="h-full border-none rounded-none p-8"
-                                        placeholder="Craft your message..."
-                                        placeholders={placeholders}
-                                        onAttach={(files) => setAttachments(prev => [...prev, ...files])}
-                                    />
-                                    {attachments.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 px-8 pb-6 border-t border-[#547792]/5 pt-4">
-                                            {attachments.map((file, index) => (
-                                                <div key={index} className="flex items-center gap-2 pl-3 pr-2 py-1.5 bg-[#213448] text-[#EAE0CF] rounded-lg text-[9px] font-black uppercase tracking-widest">
-                                                    <span className="truncate max-w-[120px]">{file.name}</span>
-                                                    <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))} className="hover:text-red-400">
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {onUseTemplate && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => onUseTemplate(draftTemplate)}
+                                            className="text-xs"
+                                        >
+                                            <Send size={12} className="mr-1.5 text-[#58A6FF]" />
+                                            Use This Template
+                                        </Button>
                                     )}
+
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={handleSaveChanges}
+                                        disabled={!hasUnsavedChanges || isSaving}
+                                        className="text-xs"
+                                    >
+                                        {isSaving ? <Loader2 size={12} className="animate-spin mr-1.5" /> : <Save size={12} className="mr-1.5" />}
+                                        Save Changes
+                                    </Button>
                                 </div>
-                            </motion.div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-[#94B4C1] opacity-40 bg-white/50 rounded-[32px] border-2 border-dashed border-[#547792]/10">
-                                <FileText size={80} className="mb-6" />
-                                <h3 className="font-black uppercase tracking-widest text-lg mb-2">No Selection</h3>
-                                <p className="font-bold text-xs uppercase tracking-widest opacity-70">Select a template to configure & edit</p>
                             </div>
-                        )}
-                    </AnimatePresence>
 
-                    {/* Delete Confirmation Modal */}
-                    <AnimatePresence>
-                        {showDeleteModal && (
-                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    onClick={() => setShowDeleteModal(false)}
-                                    className="absolute inset-0 bg-[#213448]/80 backdrop-blur-sm"
+                            {/* Subject */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-[#E6EDF3]">Email Subject</label>
+                                <Input
+                                    value={draftTemplate.subject}
+                                    onChange={(e) => updateDraft('subject', e.target.value)}
+                                    placeholder="Subject with {{name}}..."
+                                    className="h-8 text-xs bg-[#0D1117] border-[#30363D]"
                                 />
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                    className="relative w-full max-w-md bg-white rounded-[44px] shadow-2xl overflow-hidden border border-[#213448]/10"
-                                >
-                                    {/* Decorative Background Elements matching LoginModal */}
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#EAE0CF]/30 blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-500/5 blur-[60px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
-                                    <div className="p-10 relative z-10 flex flex-col items-center text-center">
-                                        <div className="w-20 h-20 bg-[#213448] text-red-400 rounded-[28px] flex items-center justify-center mb-8 shadow-2xl shadow-red-500/20 rotate-3">
-                                            <Trash2 size={36} />
-                                        </div>
-                                        <h3 className="text-3xl font-black text-[#213448] uppercase tracking-tighter mb-3 leading-none">Delete Template</h3>
-                                        <p className="text-[11px] text-[#94B4C1] font-black uppercase tracking-[0.2em] mb-10 leading-relaxed max-w-[280px]">
-                                            Are you sure you want to delete <span className="text-[#213448]">"{templateToDelete?.name}"</span>?
-                                        </p>
-
-                                        <div className="flex w-full gap-4">
-                                            <Button
-                                                onClick={() => setShowDeleteModal(false)}
-                                                className="flex-1 h-16 rounded-[24px] bg-[#EAE0CF] text-[#213448] hover:bg-[#DED0BB] font-black uppercase tracking-widest text-[10px] border-2 border-[#213448]/5"
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                onClick={performDelete}
-                                                className="flex-1 h-16 rounded-[24px] bg-[#213448] text-[#EAE0CF] hover:bg-[#547792] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-[#213448]/20 border-2 border-white/10"
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="bg-[#213448] py-4 px-8 text-center relative z-10">
-                                        <span className="text-[8px] text-[#94B4C1] font-black uppercase tracking-[0.4em]">This action cannot be undone</span>
-                                    </div>
-                                </motion.div>
                             </div>
-                        )}
-                    </AnimatePresence>
+
+                            {/* Body Editor */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-[#E6EDF3]">Email Body</label>
+                                <EmailEditor
+                                    value={draftTemplate.body}
+                                    onChange={(val) => updateDraft('body', val)}
+                                    placeholders={placeholders}
+                                    placeholder="Write your email template here..."
+                                />
+                            </div>
+                        </Card>
+                    ) : (
+                        <div className="p-12 text-center rounded-lg border border-dashed border-[#30363D] bg-[#161B22] text-[#8B949E] space-y-2">
+                            <FileText size={36} className="mx-auto text-[#8B949E]" />
+                            <h3 className="text-sm font-semibold text-[#E6EDF3]">No template selected</h3>
+                            <p className="text-xs text-[#8B949E] max-w-xs mx-auto">
+                                Click a template on the left to view or edit it, or create a new one.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {showDeleteModal && (
+                    <motion.div
+                        key="delete-template-wrapper"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed inset-0 z-[110] flex items-center justify-center p-4 isolate"
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div
+                            className="absolute inset-0 bg-[#04070A]/80 cursor-pointer"
+                            onClick={() => setShowDeleteModal(false)}
+                            aria-hidden="true"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.96, y: 6 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: 6 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative z-10 w-full max-w-sm bg-[#161B22] border border-[#30363D] rounded-xl shadow-2xl p-5 space-y-4"
+                        >
+                            <div className="flex items-center gap-2.5 text-[#F85149]">
+                                <Trash2 size={18} />
+                                <h3 className="text-sm font-semibold text-[#E6EDF3]">Delete Template</h3>
+                            </div>
+
+                            <p className="text-xs text-[#8B949E] leading-relaxed">
+                                Are you sure you want to delete <span className="text-[#E6EDF3] font-medium">&quot;{templateToDelete?.name}&quot;</span>? You won't be able to recover it.
+                            </p>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setShowDeleteModal(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    size="sm"
+                                    onClick={confirmDelete}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

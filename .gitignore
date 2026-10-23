@@ -13,6 +13,7 @@
 # testing
 /coverage
 
+bun.lock
 # next.js
 /.next/
 /out/

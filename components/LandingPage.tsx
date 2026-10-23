@@ -1,10 +1,24 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Mail, Shield, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { Button } from './ui-components';
+import {
+    Mail,
+    Shield,
+    ArrowRight,
+    CheckCircle2,
+    Lock,
+    FileSpreadsheet,
+    Send,
+    Layers,
+    Clock,
+    Check
+} from 'lucide-react';
+import { Button, Card } from './ui-components';
 import Link from 'next/link';
 import { Footer } from './Footer';
 import { Navbar } from './Navbar';
+import { LoginModal } from './LoginModal';
 
 interface LandingPageProps {
     onLaunch: () => void;
@@ -12,234 +26,344 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLaunch, onLogin }) => {
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+    const handleOpenAuth = () => {
+        setIsLoginModalOpen(true);
+    };
+
     return (
-        <div className="min-h-screen bg-[#EAE0CF] text-[#213448] selection:bg-[#94B4C1]/20">
-            {/* Header / Navbar */}
-            <Navbar onLogin={onLogin} />
+        <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3]">
+            {/* Top Navigation */}
+            <Navbar onLogin={handleOpenAuth} />
 
             {/* Hero Section */}
-            <section className="max-w-7xl mx-auto px-12 pt-32 pb-40">
-                <div className="grid lg:grid-cols-2 gap-24 items-center">
-                    <div className="space-y-10">
+            <section className="relative overflow-hidden pt-16 pb-24 md:pt-24 md:pb-32 border-b border-[#30363D]">
+                <div
+                    className="absolute inset-0 opacity-[0.15] pointer-events-none"
+                    style={{
+                        backgroundImage: `radial-gradient(#30363D 1px, transparent 1px)`,
+                        backgroundSize: '24px 24px'
+                    }}
+                />
 
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-6xl md:text-8xl lg:text-[140px] font-black tracking-tighter uppercase leading-[0.8] italic"
-                        >
-                            i<span className="text-[#94B4C1]">Email</span>
-                        </motion.h1>
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+                    <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                        {/* Hero Left Content */}
+                        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#E6EDF3] leading-[1.15]">
+                                Send personalized emails <br className="hidden sm:inline" />
+                                <span className="text-[#58A6FF]">to everyone in minutes.</span>
+                            </h1>
 
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-base md:text-lg font-bold text-[#547792] leading-relaxed max-w-lg opacity-80"
-                        >
-                            iEmail is a powerful bulk email solution that streamlines your outreach. Upload your recipient data, craft dynamic templates, and dispatch personalized emails directly through your secure Google account.
-                        </motion.p>
+                            <p className="text-sm sm:text-base text-[#8B949E] leading-relaxed max-w-xl mx-auto lg:mx-0">
+                                Upload your list from Excel or CSV, personalize each email with their name, and send them safely using your regular Google or Gmail account.
+                            </p>
 
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="flex flex-wrap gap-6 items-center"
-                        >
-                            <Button
-                                onClick={onLaunch}
-                                size="lg"
-                                className="h-16 md:h-20 px-8 md:px-12 rounded-[24px] md:rounded-[32px] bg-[#213448] hover:bg-[#547792] text-lg md:text-xl w-full sm:w-auto"
-                            >
-                                Get Started <ArrowRight className="ml-4" />
-                            </Button>
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    onClick={onLaunch}
+                                    className="w-full sm:w-auto h-10 px-5 text-xs font-semibold"
+                                >
+                                    Get started <ArrowRight size={14} className="ml-2" />
+                                </Button>
 
-                            <Button
-                                onClick={onLogin}
-                                size="lg"
-                                variant="outline"
-                                className="h-16 md:h-20 px-8 md:px-12 rounded-[24px] md:rounded-[32px] border-2 border-[#213448] text-[#213448] hover:bg-[#213448] hover:text-[#EAE0CF] text-lg md:text-xl transition-all w-full sm:w-auto"
-                            >
-                                <svg className="w-6 h-6 mr-4" viewBox="0 0 24 24">
-                                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                    <path fill="none" d="M1 1 23 23" />
-                                </svg>
-                                Sign in with Google
-                            </Button>
-                        </motion.div>
-                    </div>
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2, duration: 1 }}
-                        className="relative"
-                    >
-                        {/* Mock Dashboard Preview */}
-                        <div className="bg-white rounded-[32px] md:rounded-[44px] shadow-[0_50px_100px_-20px_rgba(33,52,72,0.15)] border-4 border-[#213448]/5 overflow-hidden p-4 md:p-8 aspect-[4/3] flex flex-col gap-4 md:gap-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-[#EAE0CF]" />
-                                    <div className="w-3 h-3 rounded-full bg-[#EAE0CF]" />
-                                    <div className="w-3 h-3 rounded-full bg-[#EAE0CF]" />
-                                </div>
-                                <div className="h-6 w-32 bg-[#EAE0CF] rounded-full" />
+                                <button
+                                    onClick={handleOpenAuth}
+                                    className="w-full sm:w-auto h-10 px-4 bg-[#21262D] hover:bg-[#30363D] text-[#C9D1D9] hover:text-[#E6EDF3] border border-[#30363D] rounded-md text-xs font-medium flex items-center justify-center gap-2.5 transition-colors shadow-sm cursor-pointer"
+                                >
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                    </svg>
+                                    Sign in with Google
+                                </button>
                             </div>
-                            <div className="flex-1 grid grid-cols-3 gap-6">
-                                <div className="col-span-1 border-2 border-[#EAE0CF] rounded-3xl p-6 space-y-4">
-                                    <div className="h-4 w-full bg-[#EAE0CF] rounded-full" />
-                                    <div className="h-4 w-2/3 bg-[#EAE0CF] rounded-full" />
-                                    <div className="h-4 w-4/5 bg-[#EAE0CF] rounded-full" />
-                                </div>
-                                <div className="col-span-2 bg-[#EAE0CF]/30 rounded-[32px] p-8 relative flex flex-col justify-center items-center text-center">
-                                    <Sparkles className="text-[#94B4C1] mb-4" size={48} />
-                                    <p className="text-[#94B4C1] font-black uppercase tracking-widest text-[10px]">Ready to Send</p>
-                                </div>
+
+                            <div className="flex items-center justify-center lg:justify-start gap-6 pt-4 text-xs text-[#8B949E]">
+                                <span className="flex items-center gap-1.5">
+                                    <Check size={14} className="text-[#3FB950]" /> Free to use
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Check size={14} className="text-[#3FB950]" /> Works with your Gmail
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Check size={14} className="text-[#3FB950]" /> Private & secure
+                                </span>
                             </div>
                         </div>
-                        {/* Decorative floating elements */}
-                        <div className="absolute -top-12 -right-12 p-8 bg-[#213448] text-[#EAE0CF] rounded-[32px] shadow-2xl rotate-12">
-                            <Zap size={32} />
-                        </div>
-                        <div className="absolute -bottom-8 -left-8 p-6 bg-[#94B4C1] text-[#213448] rounded-2xl shadow-2xl -rotate-6">
-                            <Shield size={24} />
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
 
-            {/* How it Works / Functionality Section */}
-            <section className="bg-white/30 py-24 md:py-40">
-                <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mb-20 space-y-4"
-                    >
-                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic">Simple Workflow</h2>
-                        <p className="text-[#94B4C1] font-black text-[10px] uppercase tracking-[0.4em]">From Excel to Outbox in Minutes</p>
-                    </motion.div>
-
-                    <div className="grid md:grid-cols-4 gap-12">
-                        {[
-                            { step: "01", title: "Verify", desc: "Connect your Google account securely via OAuth 2.0." },
-                            { step: "02", title: "Import", desc: "Upload your recipient list in Excel or CSV format." },
-                            { step: "03", title: "Personalize", desc: "Map your columns to dynamic placeholders in your template." },
-                            { step: "04", title: "Dispatch", desc: "Preview each message and send directly through Gmail servers." }
-                        ].map((item, i) => (
+                        {/* Hero Right: Product UI Mockup */}
+                        <div className="lg:col-span-6">
                             <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="relative p-8 rounded-[32px] bg-[#EAE0CF]/20 border border-[#213448]/5"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4 }}
+                                className="rounded-xl border border-[#30363D] bg-[#161B22] shadow-2xl overflow-hidden"
                             >
-                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#213448] text-[#EAE0CF] flex items-center justify-center font-black italic shadow-xl">{item.step}</span>
-                                <h4 className="text-xl font-black uppercase mt-4 mb-3 italic">{item.title}</h4>
-                                <p className="text-sm font-bold text-[#547792] leading-relaxed opacity-80">{item.desc}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Grid */}
-            <section className="bg-[#213448] text-[#EAE0CF] py-24 md:py-40">
-                <div className="max-w-7xl mx-auto px-6 md:px-12">
-                    <div className="grid md:grid-cols-3 gap-16">
-                        {[
-                            {
-                                icon: Mail,
-                                title: "Secure Gmail Login",
-                                description: "Secure, authenticated integration using Google's modern OAuth 2.0 protocols. We only request 'gmail.send' access to execute your outreach."
-                            },
-                            {
-                                icon: Zap,
-                                title: "Smart Throttling",
-                                description: "Customizable delays between emails to ensure reliable delivery and respect service provider limits."
-                            },
-                            {
-                                icon: Shield,
-                                title: "Data Sovereignty",
-                                description: "We do not store your emails or recipient lists. All data processing occurs locally within your secure session."
-                            }
-                        ].map((feature, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="space-y-6"
-                            >
-                                <div className="w-16 h-16 bg-[#94B4C1] rounded-2xl flex items-center justify-center">
-                                    <feature.icon size={28} />
+                                {/* Window titlebar */}
+                                <div className="h-9 px-4 bg-[#0D1117] border-b border-[#30363D] flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
+                                        <span className="ml-2 text-[11px] font-mono text-[#8B949E]">iEmail — New Message</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#3FB950]" />
+                                        <span className="text-[10px] text-[#8B949E]">Google account connected</span>
+                                    </div>
                                 </div>
-                                <h3 className="text-2xl font-black uppercase tracking-tight italic">{feature.title}</h3>
-                                <p className="text-[#94B4C1] font-bold leading-relaxed opacity-80">{feature.description}</p>
+
+                                {/* Mock Interface Contents */}
+                                <div className="p-4 sm:p-5 space-y-4 font-sans text-xs">
+                                    {/* Top Step Bar */}
+                                    <div className="flex items-center justify-between p-2.5 bg-[#0D1117] rounded-md border border-[#30363D]">
+                                        <div className="flex items-center gap-2 text-[#3FB950]">
+                                            <CheckCircle2 size={13} />
+                                            <span className="font-medium">1. Contacts (148 added)</span>
+                                        </div>
+                                        <div className="h-3 w-px bg-[#30363D]" />
+                                        <div className="flex items-center gap-2 text-[#58A6FF] font-semibold">
+                                            <span className="w-4 h-4 rounded-full bg-[#58A6FF]/20 flex items-center justify-center text-[10px]">2</span>
+                                            <span>2. Write Message</span>
+                                        </div>
+                                        <div className="h-3 w-px bg-[#30363D]" />
+                                        <div className="flex items-center gap-2 text-[#8B949E]">
+                                            <span className="w-4 h-4 rounded-full bg-[#21262D] flex items-center justify-center text-[10px]">3</span>
+                                            <span>3. Preview & Send</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Mock Editor Box */}
+                                    <div className="space-y-3 bg-[#0D1117] p-3.5 rounded-md border border-[#30363D]">
+                                        <div className="flex items-center justify-between border-b border-[#30363D] pb-2 text-[11px]">
+                                            <span className="text-[#8B949E]">Subject:</span>
+                                            <span className="font-mono text-[#E6EDF3] bg-[#161B22] px-2 py-0.5 rounded border border-[#30363D]">
+                                                Welcome aboard, &#123;&#123;name&#125;&#125;! 👋
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-1.5 text-[#8B949E] text-[11px]">
+                                            <p className="text-[#E6EDF3]">Hi &#123;&#123;name&#125;&#125;,</p>
+                                            <p>Thanks for joining us from <span className="text-[#58A6FF] font-mono">&#123;&#123;company&#125;&#125;</span>. Your account is ready to go!</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-2 border-t border-[#30363D] text-[10px]">
+                                            <div className="flex gap-1.5">
+                                                <span className="px-1.5 py-0.5 rounded bg-[#21262D] text-[#58A6FF] font-mono border border-[#30363D]">&#123;&#123;name&#125;&#125;</span>
+                                                <span className="px-1.5 py-0.5 rounded bg-[#21262D] text-[#58A6FF] font-mono border border-[#30363D]">&#123;&#123;email&#125;&#125;</span>
+                                                <span className="px-1.5 py-0.5 rounded bg-[#21262D] text-[#58A6FF] font-mono border border-[#30363D]">&#123;&#123;company&#125;&#125;</span>
+                                            </div>
+                                            <span className="text-[#8B949E]">Delay: 2 seconds between emails</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Mock Bottom Actions */}
+                                    <div className="flex items-center justify-between pt-1">
+                                        <div className="flex items-center gap-2 text-[#8B949E] text-[11px]">
+                                            <FileSpreadsheet size={13} className="text-[#3FB950]" />
+                                            <span>my_contacts.csv</span>
+                                        </div>
+                                        <div>
+                                            <span className="px-2.5 py-1 rounded bg-[#238636] text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+                                                <Send size={11} /> Ready to Send
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </motion.div>
-                        ))}
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Google Compliance / Data Transparency Section */}
-            <section className="py-24 md:py-40 max-w-5xl mx-auto px-6">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    className="p-12 md:p-20 rounded-[48px] bg-white shadow-2xl shadow-[#213448]/5 border border-[#213448]/5 text-center space-y-10"
-                >
-                    <div className="w-20 h-20 bg-[#213448] text-[#EAE0CF] rounded-[32px] flex items-center justify-center mx-auto shadow-2xl mb-8">
-                        <Shield size={32} />
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic leading-none">Transparency & Security</h2>
-                    <p className="text-lg md:text-xl font-bold text-[#547792] leading-relaxed opacity-90 max-w-2xl mx-auto">
-                        iEmail is designed with privacy-first architecture. We explicitly define how your data is accessed and used.
+            {/* Feature Cards Grid */}
+            <section className="py-20 max-w-6xl mx-auto px-4 sm:px-6">
+                <div className="text-center max-w-2xl mx-auto mb-14 space-y-2.5">
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E6EDF3]">
+                        Everything you need to send emails easily
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#8B949E]">
+                        Simple controls, safe sending, and zero headache.
                     </p>
+                </div>
 
-                    <div className="grid md:grid-cols-2 gap-10 text-left pt-10">
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#94B4C1]">Purpose of Data Request</h4>
-                            <p className="text-sm font-bold text-[#213448] leading-relaxed">
-                                We request Google OAuth access specifically to send emails on your behalf. This allows you to use your own verified identity for bulk communications.
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#94B4C1]">Limited Scopes</h4>
-                            <p className="text-sm font-bold text-[#213448] leading-relaxed">
-                                Our app limits its authority to the <code className="bg-[#213448]/5 px-1.5 py-0.5 rounded text-[#213448]">gmail.send</code> scope. We cannot read your inbox, delete messages, or access your Drive files.
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#94B4C1]">Local Processing</h4>
-                            <p className="text-sm font-bold text-[#213448] leading-relaxed">
-                                Your recipient lists (Excel/CSV) and email content are parsed directly in your browser. No third party ever sees your sensitive lead data.
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#94B4C1]">No Data Retention</h4>
-                            <p className="text-sm font-bold text-[#213448] leading-relaxed">
-                                We do not store your Google tokens or email data on our servers. Authentication is managed securely via Firebase and local session storage.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="pt-10 flex flex-wrap justify-center gap-10">
-                        <a href="/privacy" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#94B4C1] hover:text-[#213448] transition-all underline decoration-[#94B4C1]/30 underline-offset-8">Read Privacy Policy</a>
-                        <a href="/tos" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#94B4C1] hover:text-[#213448] transition-all underline decoration-[#94B4C1]/30 underline-offset-8">Terms of Service</a>
-                    </div>
-                </motion.div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        {
+                            icon: Shield,
+                            title: "Safe Google Sign-In",
+                            desc: "Sign in with your regular Google account. We never see or store your password.",
+                            accent: "text-[#58A6FF]"
+                        },
+                        {
+                            icon: Clock,
+                            title: "Adjust Sending Speed",
+                            desc: "Set a short pause between emails so you stay within Google's daily sending limits and land in the inbox.",
+                            accent: "text-[#3FB950]"
+                        },
+                        {
+                            icon: Layers,
+                            title: "Automatic Name Tags",
+                            desc: "Use placeholders like {{name}} or {{company}} to make every single email feel personal and unique.",
+                            accent: "text-[#D29922]"
+                        },
+                        {
+                            icon: Lock,
+                            title: "100% Private",
+                            desc: "Your contact lists stay on your device. We do not store, view, or sell your contacts or emails.",
+                            accent: "text-[#F85149]"
+                        }
+                    ].map((feature, i) => (
+                        <Card key={i} className="p-5 hover:border-[#58A6FF]/40 transition-colors bg-[#161B22] flex flex-col justify-between">
+                            <div className="space-y-3">
+                                <div className={`w-8 h-8 rounded-md bg-[#21262D] border border-[#30363D] flex items-center justify-center ${feature.accent}`}>
+                                    <feature.icon size={16} />
+                                </div>
+                                <h3 className="text-sm font-semibold text-[#E6EDF3]">{feature.title}</h3>
+                                <p className="text-xs text-[#8B949E] leading-relaxed">{feature.desc}</p>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
             </section>
 
+            {/* How It Works Section */}
+            <section className="py-20 bg-[#161B22]/50 border-y border-[#30363D]">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6">
+                    <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E6EDF3]">
+                            Four simple steps to send your emails
+                        </h2>
+                    </div>
 
-            <Footer className="border-t border-[#213448]/5 mt-20" />
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            {
+                                step: "1",
+                                title: "Sign In",
+                                desc: "Log in with your Google account so emails are sent directly from your own email address."
+                            },
+                            {
+                                step: "2",
+                                title: "Upload Your List",
+                                desc: "Upload an Excel or CSV file containing your contacts' emails and names."
+                            },
+                            {
+                                step: "3",
+                                title: "Write Your Message",
+                                desc: "Write what you want to say and insert tags like {{name}} to personalize each email."
+                            },
+                            {
+                                step: "4",
+                                title: "Preview & Send",
+                                desc: "Check how the email looks for each person, then click Send to deliver your emails."
+                            }
+                        ].map((item, i) => (
+                            <div key={i} className="p-5 rounded-lg border border-[#30363D] bg-[#161B22] space-y-3 relative">
+                                <span className="text-xs font-semibold text-[#58A6FF] px-2 py-0.5 rounded bg-[#21262D] border border-[#30363D] inline-block">
+                                    Step {item.step}
+                                </span>
+                                <h3 className="text-sm font-semibold text-[#E6EDF3]">{item.title}</h3>
+                                <p className="text-xs text-[#8B949E] leading-relaxed">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Security & Privacy Section */}
+            <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6">
+                <div className="p-6 sm:p-8 rounded-xl border border-[#30363D] bg-[#161B22]">
+                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#30363D]">
+                        <div className="w-8 h-8 rounded-md bg-[#21262D] border border-[#30363D] flex items-center justify-center text-[#3FB950]">
+                            <Shield size={16} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-[#E6EDF3]">Your Privacy & Safety Come First</h3>
+                            <p className="text-xs text-[#8B949E]">Here is how we keep your Google account and emails secure</p>
+                        </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-6 text-xs text-[#8B949E]">
+                        <div className="space-y-1.5">
+                            <span className="font-medium text-[#E6EDF3] block">We only send emails</span>
+                            <p className="leading-relaxed">
+                                We only ask permission to send messages you write. We cannot read your inbox, delete your messages, or see your private files.
+                            </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <span className="font-medium text-[#E6EDF3] block">We don't keep your contacts</span>
+                            <p className="leading-relaxed">
+                                Your contact lists are processed directly on your computer. We do not save or sell your email lists to anyone.
+                            </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <span className="font-medium text-[#E6EDF3] block">Direct from your Gmail</span>
+                            <p className="leading-relaxed">
+                                Emails come straight from your real email address, so your recipients know it's really you.
+                            </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <span className="font-medium text-[#E6EDF3] block">Your templates stay on your device</span>
+                            <p className="leading-relaxed">
+                                Templates you save stay handy on your device so you can easily reuse them whenever you want.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-[#30363D] flex flex-wrap items-center justify-between gap-4 text-xs">
+                        <span className="text-[#8B949E]">Learn more about our policies:</span>
+                        <div className="flex gap-4">
+                            <Link href="/privacy" className="text-[#58A6FF] hover:underline">Privacy Policy</Link>
+                            <span className="text-[#30363D]">•</span>
+                            <Link href="/tos" className="text-[#58A6FF] hover:underline">Terms of Service</Link>
+                            <span className="text-[#30363D]">•</span>
+                            <Link href="/docs" className="text-[#58A6FF] hover:underline">Help & Docs</Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Bottom CTA */}
+            <section className="py-16 text-center border-t border-[#30363D] bg-[#161B22]/30">
+                <div className="max-w-xl mx-auto px-4 space-y-4">
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#E6EDF3]">
+                        Ready to send your first email batch?
+                    </h2>
+                    <p className="text-xs text-[#8B949E]">
+                        Connect your account and get started in less than two minutes.
+                    </p>
+                    <div className="pt-2">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={onLaunch}
+                            className="h-10 px-6 text-xs font-semibold"
+                        >
+                            Open iEmail <ArrowRight size={14} className="ml-2" />
+                        </Button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <Footer />
+
+            {/* Login Modal */}
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+                onLogin={onLogin}
+            />
         </div>
     );
 };
