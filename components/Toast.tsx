@@ -101,7 +101,7 @@ export const ToastContainer: React.FC = () => {
 
     return (
         <div
-            className="fixed top-4 right-4 z-[200] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+            className="fixed bottom-4 right-4 z-[200] flex flex-col-reverse gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"
             aria-live="polite"
         >
             <AnimatePresence mode="popLayout">
@@ -136,26 +136,22 @@ const ToastCard: React.FC<{ item: ToastItem; onDismiss: () => void }> = ({ item,
                 return {
                     borderColor: 'border-[#3FB950]/40',
                     barColor: 'bg-[#3FB950]',
-                    indicatorColor: 'bg-[#3FB950]',
                 };
             case 'error':
                 return {
                     borderColor: 'border-[#F85149]/40',
                     barColor: 'bg-[#F85149]',
-                    indicatorColor: 'bg-[#F85149]',
                 };
             case 'warning':
                 return {
                     borderColor: 'border-[#D29922]/40',
                     barColor: 'bg-[#D29922]',
-                    indicatorColor: 'bg-[#D29922]',
                 };
             case 'info':
             default:
                 return {
                     borderColor: 'border-[#58A6FF]/40',
                     barColor: 'bg-[#58A6FF]',
-                    indicatorColor: 'bg-[#58A6FF]',
                 };
         }
     };
@@ -165,17 +161,14 @@ const ToastCard: React.FC<{ item: ToastItem; onDismiss: () => void }> = ({ item,
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.15 } }}
+            exit={{ opacity: 0, y: 8, scale: 0.94, transition: { duration: 0.15 } }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             className={`pointer-events-auto relative w-full bg-[#161B22] border ${styles.borderColor} rounded-xl shadow-2xl overflow-hidden flex flex-col`}
             role="status"
         >
-            <div className="p-3.5 flex items-start gap-3">
-                {/* Subtle type indicator dot instead of large icon */}
-                <div className={`w-2 h-2 rounded-full ${styles.indicatorColor} shrink-0 mt-1.5`} />
-
+            <div className="p-3.5 flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0 pr-1">
                     {item.title && (
                         <h5 className="text-xs font-semibold text-[#E6EDF3] leading-tight mb-0.5">
