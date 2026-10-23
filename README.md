@@ -1,57 +1,88 @@
-# Email Seeder 📧
+# iEmail Frontend
 
-Email Seeder is a premium SaaS platform designed for high-efficiency bulk email sending and campaign management. It simplifies the process of reaching your audience through a seamless, automated workflow.
+iEmail is a high-efficiency bulk email dispatch and campaign management platform built with Next.js, React, and TypeScript. It provides a privacy-first workflow with client-side spreadsheet parsing, real-time Server-Sent Events (SSE) streaming, and a GitHub Dark design system.
 
-## 🚀 What It Does
+## Key Features
 
-- **Bulk Email Dispatch**: Send thousands of emails with a single click after setting up your campaign.
-- **Recipient Management**: Effortlessly upload and manage recipient lists via CSV or Excel files.
-- **Template System**: Create, save, and reuse beautiful email templates with a built-in rich text editor.
-- **Dynamic Previews**: Live preview your emails before sending to ensure everything looks perfect.
-- **Secure Authentication**: Integrated with Google OAuth for secure access to your Gmail/Google Workspace accounts.
+- **Bulk Email Dispatch**: Streamlined email campaign delivery with real-time SSE progress streaming and configurable throttle delays.
+- **Privacy-First Zero-Retention Parsing**: Contact lists (.xlsx, .xls, .csv) are parsed directly in the browser using SheetJS; raw spreadsheets are never stored on external servers or databases.
+- **Campaign & Template Management**: Create, customize, and save email templates with dynamic recipient variable interpolation.
+- **Dynamic Live Previews**: Verify exact rendering, formatting, and recipient assignments before triggering dispatch.
+- **Secure Authentication**: Google OAuth integration via Firebase Auth for authorized Gmail API dispatch directly through authenticated accounts.
+- **GitHub Dark Design System**: Cohesive, accessible dark interface engineered for productivity and visual focus.
 
-## ⚙️ How It Works
+## Technology Stack
 
-The platform is built with a modern technological stack:
-- **Frontend**: A high-performance React application powered by **Next.js**, utilizing **Tailwind CSS** for a premium UI/UX.
-- **Backend**: A robust **NestJS** microservice architecture that handles mail queuing, template processing, and secure token management.
-- **Authentication**: Powered by **Firebase Auth** to ensure secure, seamless Google sign-in.
-- **Integration**: Syncs directly with the Google Mail API to dispatch emails through your own professional account.
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Icons & Motion**: Lucide React, Framer Motion
+- **Spreadsheet Processing**: SheetJS (xlsx)
+- **Authentication**: Firebase Authentication (Google OAuth provider)
 
-## 📖 How to Use
+## Prerequisites
 
-Follow these simple steps to launch your first campaign:
+- Node.js v18.18+ or v20+
+- npm or pnpm / yarn / bun
+- Running iEmail backend service (NestJS)
 
-1.  **Sign In**: Click the "Launch" or "Login" button to authenticate with your Google account.
-2.  **Upload Recipients**: Navigate to the upload section and drop your CSV/Excel file containing your contact list.
-3.  **Choose a Template**: Select from your saved templates or create a new one using the editor.
-4.  **Preview & Verify**: Check the preview step to see exactly how your recipients will receive the email.
-5.  **Send**: Hit the send button and watch the system handle the rest!
+## Environment Configuration
 
-## 🛠️ Getting Started (Development)
+Create a `.env.local` file in the `frontend` root directory with the following variables:
 
-First, install dependencies:
+```env
+# Backend API Base URL
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+
+# Firebase Client Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
+
+## Getting Started
+
+1. Install project dependencies:
+
 ```bash
 npm install
 ```
 
-Then, run the development server:
+2. Start the local development server:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📬 Contact & Support
+## Available Scripts
 
-This project is open-source but requires backend access for full functionality.
+- `npm run dev`: Starts the Next.js development server with hot reloading.
+- `npm run build`: Compiles the application for production deployment.
+- `npm run start`: Runs the compiled production build.
+- `npm run lint`: Runs ESLint checks across the codebase.
 
-- **Questions?**
-- **Need Backend Credentials?**
-- **Want the Backend Repo?**
+## Documentation
 
-Please reach out directly to the developer:
-📧 **Email**: [gericmorit.dev@gmail.com](mailto:gericmorit.dev@gmail.com)
+Comprehensive architectural specifications, security guidelines, and API references are available in the documentation directory:
 
----
-*Built with ❤️ for rapid email seeding.*
+- [Documentation Hub](./documentation/README.md) - Master documentation index
+- [Getting Started & Local Setup](./documentation/getting-started/GETTING_STARTED.md) - Environment and configuration guides
+- [Architecture & System Design](./documentation/architecture/ARCHITECTURE.md) - Data flows, zero-retention model, and design tokens
+- [API Documentation](./documentation/api/API_DOCUMENTATION.md) - Backend REST and SSE endpoint specifications
+- [Security Audit Report](./documentation/security/SECURITY_AUDIT.md) - Security vulnerability analysis and token safety
+
+## Contributing & Agent Guidelines
+
+All AI coding assistants and contributors must read and follow the workspace rules in [AGENTS.md](./AGENTS.md) before making modifications to the codebase.
+
+## Support & Contact
+
+For support, questions, or backend repository access, contact:
+
+- Email: [gericmorit.dev@gmail.com](mailto:gericmorit.dev@gmail.com)
