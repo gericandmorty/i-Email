@@ -5,6 +5,7 @@ import EmailSeeder from "@/components/EmailSeeder";
 import { LandingPage } from "@/components/LandingPage";
 import { auth, googleProvider } from '@/lib/firebase';
 import { onAuthStateChanged, signInWithPopup, User, GoogleAuthProvider } from 'firebase/auth';
+import { toast } from '@/components/Toast';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -95,22 +96,36 @@ export default function Home() {
             const data = await res.json();
             setInitialAccounts(data.accounts || []);
           }
+          toast.success(`Welcome, ${user.displayName || user.email}!`, {
+            title: 'Signed in successfully',
+          });
         } else {
           // If sync fails, the user is not truly authenticated for our app
-          let errorMsg = 'Sync protocol failed. Please try again.';
+          let errorMsg = 'Could not sign in with backend. Please check connection.';
           try {
             const errorData = await syncResponse.json();
-            if (errorData.message) errorMsg = `Sync failed: ${errorData.message}`;
+            if (errorData.message) errorMsg = `Sign-in issue: ${errorData.message}`;
           } catch (e) {
-            errorMsg = `Sync failed with status: ${syncResponse.status}`;
+            errorMsg = 'Could not connect to the service. Please try again.';
           }
-          alert(errorMsg);
           handleLogout();
+          toast.error(errorMsg, { title: 'Authentication Issue' });
+          throw new Error(errorMsg);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (
+        error?.code === 'auth/popup-closed-by-user' ||
+        error?.code === 'auth/cancelled-popup-request'
+      ) {
+        // User voluntarily dismissed the Google popup; ignore cleanly
+        return;
+      }
       console.error('Login failed:', error);
-      alert('Authentication protocol failed. Please verify credentials.');
+      toast.error(error?.message || 'Could not complete sign in with Google.', {
+        title: 'Sign In Failed',
+      });
+      throw error;
     }
   };
 
@@ -123,23 +138,25 @@ export default function Home() {
       localStorage.removeItem('iEmail_senderEmail');
       localStorage.removeItem('iEmail_senderName');
       localStorage.removeItem('iEmail_senderPicture');
-      window.location.reload();
+      toast.info('You have been signed out successfully.', {
+        title: 'Signed Out',
+      });
     } catch (error) {
       console.error('Logout failed:', error);
+      toast.error('Could not complete logout properly.');
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#EAE0CF] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-[#213448]/10 rounded-full" />
-            <div className="absolute top-0 w-16 h-16 border-4 border-[#213448] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-md bg-[#161B22] border border-[#30363D] flex items-center justify-center shadow-sm">
+            <div className="w-4 h-4 border-2 border-[#58A6FF] border-t-transparent rounded-full animate-spin" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#213448]">Authenticating...</span>
-            <span className="text-[8px] font-bold uppercase tracking-widest text-[#94B4C1]">Verifying Security Protocol</span>
+            <span className="text-xs font-mono font-medium text-[#E6EDF3]">Signing in...</span>
+            <span className="text-[11px] font-mono text-[#8B949E]">Connecting your Google account</span>
           </div>
         </div>
       </div>
@@ -149,7 +166,7 @@ export default function Home() {
   // Strictly render EmailSeeder ONLY if authenticated
   if (user) {
     return (
-      <main className="min-h-screen bg-zinc-50/50">
+      <main className="min-h-screen bg-[#0D1117] text-[#E6EDF3]">
         <EmailSeeder
           onLogout={handleLogout}
           initialAccounts={initialAccounts}
@@ -162,3 +179,4 @@ export default function Home() {
   // Default fallback to Landing Page
   return <LandingPage onLaunch={handleLogin} onLogin={handleLogin} />;
 }
+

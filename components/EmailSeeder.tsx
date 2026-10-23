@@ -14,6 +14,7 @@ import { ChevronRight, ChevronLeft, CheckCircle2, Mail, LayoutDashboard, Sparkle
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
 import { TemplatesView } from './TemplatesView';
+import { toast } from './Toast';
 
 interface GoogleAccount {
     email: string;
@@ -125,6 +126,8 @@ export default function IEmail({
     // Sending state
     const [isSending, setIsSending] = useState(false);
     const [sendingProgress, setSendingProgress] = useState(0);
+    const [isDispatchSuccess, setIsDispatchSuccess] = useState(false);
+    const [sendError, setSendError] = useState<string | null>(null);
     const [delayBetweenEmails, setDelayBetweenEmails] = useState(2); // Default 2 seconds
     const [recipientStatuses, setRecipientStatuses] = useState<Record<number, 'pending' | 'sending' | 'success' | 'error'>>({});
     const [dispatchHistory, setDispatchHistory] = useState<any[]>([]);
@@ -178,6 +181,9 @@ export default function IEmail({
         if (isAuthSuccess) {
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
+            toast.success('Google account connected successfully!', {
+                title: 'Account Connected',
+            });
         }
 
         const init = async () => {
@@ -298,6 +304,8 @@ export default function IEmail({
 
         setIsSending(true);
         setSendingProgress(0);
+        setSendError(null);
+        setIsDispatchSuccess(false);
         setRecipientStatuses({});
 
         try {
@@ -322,6 +330,10 @@ export default function IEmail({
                 formData.append('attachments', file);
             });
 
+            toast.info(`Starting dispatch of ${recipients.length} emails...`, {
+                title: 'Dispatch Initiated',
+            });
+
             console.log("Frontend: Fetching /send-emails...");
             const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
             const response = await fetch(`${baseUrl}/send-emails`, {
@@ -332,8 +344,15 @@ export default function IEmail({
             console.log(`Frontend: Response status ${response.status}`);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to dispatch emails');
+                let errorDetail = 'Failed to dispatch emails';
+                try {
+                    const errorData = await response.json();
+                    errorDetail = errorData.detail || errorData.message || errorDetail;
+                } catch (e) {
+                    // Fallback to status text
+                    errorDetail = `Server returned status ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorDetail);
             }
 
             // Consume Streaming Response
@@ -343,6 +362,65 @@ export default function IEmail({
             if (!reader) throw new Error("Could not initialize stream reader");
 
             let buffer = "";
+            let failedCount = 0;
+            let successCount = 0;
+
+            const processLine = (line: string) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                // SSE format parsing: remove "data: " prefix if present
+                const jsonStr = trimmedLine.startsWith("data: ")
+                    ? trimmedLine.slice(6).trim()
+                    : trimmedLine;
+
+                try {
+                    const rawData = JSON.parse(jsonStr);
+                    const data = rawData.data || rawData;
+
+                    if (data.type === 'progress') {
+                        if (data.success) {
+                            successCount++;
+                        } else {
+                            failedCount++;
+                        }
+                        setRecipientStatuses(prev => ({
+                            ...prev,
+                            [data.index]: data.success ? 'success' : 'error'
+                        }));
+                        const progress = data.total > 0
+                            ? Math.min(100, Math.round(((data.index + 1) / data.total) * 100))
+                            : 100;
+                        setSendingProgress(progress);
+                    } else if (data.type === 'completed' || data.type === 'complete') {
+                        console.log("Dispatch mission accomplished:", data);
+                        setSendingProgress(100);
+                        setIsDispatchSuccess(true);
+
+                        const totalCount = data.total || data.totalCount || recipients.length;
+                        const finalFailures = data.failCount ?? failedCount;
+                        const finalSuccess = data.successCount ?? successCount;
+
+                        if (finalFailures === 0) {
+                            toast.success(`All ${totalCount} emails sent successfully!`, {
+                                title: 'Dispatch Completed',
+                            });
+                        } else {
+                            toast.warning(`Dispatch completed: ${finalSuccess} sent, ${finalFailures} failed.`, {
+                                title: 'Dispatch Completed with Warnings',
+                            });
+                        }
+                    } else if (data.type === 'error') {
+                        throw new Error(data.message || 'Stream dispatch error occurred');
+                    }
+                } catch (e: any) {
+                    if (e && e.message && !e.message.includes('JSON')) {
+                        throw e;
+                    }
+                    console.error("Error parsing stream line:", e, trimmedLine);
+                }
+            };
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -354,39 +432,31 @@ export default function IEmail({
                 buffer = lines.pop() || "";
 
                 for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine) continue;
-
-                    // SSE format parsing: remove "data: " prefix if present
-                    const jsonStr = trimmedLine.startsWith("data: ")
-                        ? trimmedLine.slice(6)
-                        : trimmedLine;
-
-                    try {
-                        const data = JSON.parse(jsonStr);
-                        if (data.type === 'progress') {
-                            setRecipientStatuses(prev => ({
-                                ...prev,
-                                [data.index]: data.success ? 'success' : 'error'
-                            }));
-                            setSendingProgress(((data.index + 1) / data.total) * 100);
-                        } else if (data.type === 'completed') {
-                            console.log("Dispatch mission accomplished:", data);
-                            setSendingProgress(100);
-                        }
-                    } catch (e) {
-                        console.error("Error parsing stream line:", e, trimmedLine);
-                    }
+                    processLine(line);
                 }
             }
 
+            // Process any remaining data in buffer after stream ends
+            if (buffer.trim()) {
+                processLine(buffer);
+                buffer = "";
+            }
+
+            // Ensure progress reaches 100% and success state is registered
+            setSendingProgress(100);
+            setIsDispatchSuccess(true);
             setIsSending(false);
             fetchHistory();
 
         } catch (error) {
             setIsSending(false);
+            setIsDispatchSuccess(false);
             console.error('Dispatch error:', error);
-            alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const errorMsg = error instanceof Error ? error.message : 'Unknown dispatch error occurred';
+            setSendError(errorMsg);
+            toast.error(errorMsg, {
+                title: 'Dispatch Failed',
+            });
         }
     };
 
@@ -406,14 +476,20 @@ export default function IEmail({
 
     if (isLoadingAccounts) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#EAE0CF]">
-                <ProtocolLoader label="Loading Email Accounts..." />
+            <div className="flex items-center justify-center min-h-screen bg-[#0D1117]">
+                <ProtocolLoader label="Loading your account..." />
             </div>
         );
     }
 
+    const stepLabels = [
+        { num: 1, name: '1. Contacts' },
+        { num: 2, name: '2. Message' },
+        { num: 3, name: '3. Preview & Send' }
+    ];
+
     return (
-        <div className="min-h-screen bg-[#EAE0CF] text-[#213448] selection:bg-[#94B4C1]/20 selection:text-[#213448] flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3] flex flex-col lg:flex-row font-sans">
             <Sidebar
                 isSidebarExpanded={isSidebarExpanded}
                 setIsSidebarExpanded={setIsSidebarExpanded}
@@ -439,33 +515,102 @@ export default function IEmail({
             />
 
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#213448] text-[#EAE0CF] flex items-center justify-between px-6 z-[90] shadow-xl border-b border-[#547792]">
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[#161B22] border-b border-[#30363D] flex items-center justify-between px-4 z-[90]">
                 <button
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="w-10 h-10 rounded-xl bg-[#547792]/20 flex items-center justify-center text-[#94B4C1]"
+                    className="p-1.5 rounded-md text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]"
+                    aria-label="Open navigation menu"
                 >
-                    <Menu size={20} />
+                    <Menu size={18} />
                 </button>
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#94B4C1] text-[#213448] rounded-lg flex items-center justify-center">
-                        <Mail size={16} />
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-[#21262D] text-[#58A6FF] rounded border border-[#30363D] flex items-center justify-center">
+                        <Mail size={13} />
                     </div>
-                    <span className="text-sm font-black tracking-tighter uppercase italic">iEmail</span>
+                    <span className="text-xs font-semibold text-[#E6EDF3]">iEmail</span>
                 </div>
+                <div className="w-6" /> {/* spacer */}
             </header>
 
-            {/* Right Column: Process Area */}
-            <main className="flex-1 min-h-screen overflow-y-auto bg-[#EAE0CF] relative flex flex-col pt-16 lg:pt-0">
+            {/* Main Content Area */}
+            <main className="flex-1 min-h-screen overflow-y-auto bg-[#0D1117] flex flex-col pt-14 lg:pt-0">
+                {/* Desktop Workspace Topbar */}
+                <div className="hidden lg:flex h-14 border-b border-[#30363D] bg-[#161B22]/60 px-8 items-center justify-between shrink-0">
+                    {/* Breadcrumbs */}
+                    <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className="text-[#8B949E]">iEmail</span>
+                        <span className="text-[#30363D]">/</span>
+                        <span className="text-[#E6EDF3] font-semibold">
+                            {view === 'templates' ? 'Templates' : stepLabels[step - 1]?.name}
+                        </span>
+                        {view === 'wizard' && file && (
+                            <>
+                                <span className="text-[#30363D]">/</span>
+                                <span className="text-[#8B949E] font-mono text-[11px] truncate max-w-[200px]">
+                                    {file.name}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Step progress pills (when in wizard) */}
+                    {view === 'wizard' && (
+                        <div className="flex items-center gap-1.5">
+                            {stepLabels.map((s, idx) => {
+                                const isActive = step === s.num;
+                                const isPassed = step > s.num;
+                                return (
+                                    <React.Fragment key={s.num}>
+                                        <button
+                                            onClick={() => {
+                                                if (s.num === 1) setStep(1);
+                                                if (s.num === 2 && file) setStep(2);
+                                                if (s.num === 3 && file && subject && body) setStep(3);
+                                            }}
+                                            disabled={(s.num === 2 && !file) || (s.num === 3 && (!file || !subject || !body))}
+                                            className={cn(
+                                                "px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5",
+                                                isActive
+                                                    ? "bg-[#21262D] text-[#58A6FF] border border-[#58A6FF]/40 font-semibold"
+                                                    : isPassed
+                                                    ? "text-[#3FB950] hover:bg-[#21262D]"
+                                                    : "text-[#8B949E] hover:bg-[#21262D] disabled:opacity-40 disabled:hover:bg-transparent"
+                                            )}
+                                        >
+                                            <span className="w-4 h-4 rounded-full bg-[#30363D] flex items-center justify-center text-[10px] font-mono">
+                                                {s.num}
+                                            </span>
+                                            <span>{s.name}</span>
+                                        </button>
+                                        {idx < stepLabels.length - 1 && (
+                                            <span className="text-[#30363D] text-xs">→</span>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Connected Account status */}
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="w-2 h-2 rounded-full bg-[#3FB950]" />
+                        <span className="text-[#8B949E] font-mono text-[11px]">
+                            {senderEmail || 'Guest Mode'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Workspace Body */}
                 <div className={cn(
-                    "flex-1 w-full mx-auto py-8 lg:py-12 px-4 lg:px-12 transition-all duration-300",
-                    step === 3 ? "max-w-none" : "max-w-6xl"
+                    "flex-1 w-full mx-auto py-6 lg:py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300",
+                    step === 3 ? "max-w-none" : "max-w-7xl"
                 )}>
                     {view === 'templates' ? (
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.3 }}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.2 }}
                             className="h-full"
                         >
                             <TemplatesView
@@ -481,15 +626,10 @@ export default function IEmail({
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={step}
-                                    initial={{ opacity: 0, y: 15 }}
+                                    initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -15 }}
-                                    transition={{
-                                        type: "spring",
-                                        damping: 25,
-                                        stiffness: 120,
-                                        mass: 1
-                                    }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    transition={{ duration: 0.15 }}
                                 >
                                     {/* Wizard Steps */}
                                     {step === 1 && (
@@ -538,11 +678,18 @@ export default function IEmail({
                                                 attachments={attachments}
                                                 isSending={isSending}
                                                 sendingProgress={sendingProgress}
+                                                isDispatchSuccess={isDispatchSuccess}
+                                                onResetDispatch={() => {
+                                                    setIsDispatchSuccess(false);
+                                                    setSendingProgress(0);
+                                                }}
                                                 delayBetweenEmails={delayBetweenEmails}
                                                 onDelayChange={setDelayBetweenEmails}
                                                 recipientStatuses={recipientStatuses}
                                                 history={dispatchHistory}
                                                 onSend={handleSend}
+                                                sendError={sendError}
+                                                onClearSendError={() => setSendError(null)}
                                                 onClearHistory={async () => {
                                                     if (!senderEmail) return;
                                                     try {
@@ -558,13 +705,13 @@ export default function IEmail({
                                                 }}
                                             />
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center p-12 text-[#94B4C1] opacity-50 space-y-4 h-[60vh] border-2 border-dashed border-[#94B4C1]/20 rounded-[44px]">
-                                                <LayoutDashboard size={64} strokeWidth={1} />
-                                                <div className="text-center">
-                                                    <h3 className="text-xl font-black uppercase tracking-widest mb-2">No Recipient Data</h3>
-                                                    <p className="text-sm font-bold opacity-70 mb-6 uppercase tracking-tight">An active recipient list is required for dispatch.</p>
-                                                    <Button onClick={() => setStep(1)} className="bg-[#213448] text-[#EAE0CF] hover:bg-[#547792] rounded-xl px-8 h-12 shadow-xl">
-                                                        Initialize Upload
+                                            <div className="flex flex-col items-center justify-center p-12 text-[#8B949E] space-y-4 h-[60vh] border border-dashed border-[#30363D] rounded-lg bg-[#161B22]">
+                                                <LayoutDashboard size={48} className="text-[#8B949E]" />
+                                                <div className="text-center space-y-2">
+                                                    <h3 className="text-sm font-semibold text-[#E6EDF3]">No contacts uploaded yet</h3>
+                                                    <p className="text-xs text-[#8B949E] max-w-sm">Please upload an Excel or CSV file with your contact list first.</p>
+                                                    <Button variant="primary" onClick={() => setStep(1)} className="mt-2">
+                                                        Upload Contact List
                                                     </Button>
                                                 </div>
                                             </div>
@@ -573,25 +720,33 @@ export default function IEmail({
                                 </motion.div>
                             </AnimatePresence>
 
-                            {/* Navigation Footer */}
+                            {/* Step Navigation Bar */}
                             <AnimatePresence>
                                 {((step === 1 && file) || (step > 1 && step < 3)) && (
                                     <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="mt-16 flex justify-between items-center bg-[#213448] p-6 rounded-[32px] shadow-2xl"
+                                        className="mt-8 flex justify-between items-center bg-[#161B22] p-4 rounded-lg border border-[#30363D] shadow-sm"
                                     >
-                                        {step > 1 && (
-                                            <Button variant="ghost" onClick={prevStep} disabled={isSending} className="text-[#94B4C1] hover:text-[#EAE0CF] hover:bg-white/5">
-                                                <ChevronLeft size={18} className="mr-2" /> Back
+                                        {step > 1 ? (
+                                            <Button
+                                                variant="secondary"
+                                                onClick={prevStep}
+                                                disabled={isSending}
+                                                className="text-xs flex items-center gap-1.5"
+                                            >
+                                                <ChevronLeft size={14} /> Back
                                             </Button>
+                                        ) : (
+                                            <div />
                                         )}
                                         <Button
+                                            variant="primary"
                                             onClick={nextStep}
                                             disabled={isNextDisabled() || isSending}
-                                            className="min-w-[160px] bg-[#94B4C1] hover:bg-[#94B4C1]/90 text-[#213448] rounded-2xl h-12 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-[#94B4C1]/20"
+                                            className="text-xs flex items-center gap-1.5"
                                         >
-                                            Proceed <ChevronRight size={18} className="ml-2" />
+                                            {step === 1 ? "Next: Write Email" : "Next: Preview & Send"} <ChevronRight size={14} />
                                         </Button>
                                     </motion.div>
                                 )}
@@ -601,27 +756,30 @@ export default function IEmail({
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="mt-8 flex justify-center"
+                                    className="mt-6 flex justify-start"
                                 >
-                                    <Button variant="ghost" onClick={prevStep} className="text-[#547792] font-bold hover:text-[#213448]">
-                                        <ChevronLeft size={16} className="mr-2" /> Refine details
+                                    <Button
+                                        variant="secondary"
+                                        onClick={prevStep}
+                                        className="text-xs flex items-center gap-1.5 text-[#8B949E] hover:text-[#E6EDF3]"
+                                    >
+                                        <ChevronLeft size={14} /> Back to edit message
                                     </Button>
                                 </motion.div>
                             )}
-
-                            {/* End Wizard Content */}
                         </>
                     )}
                 </div>
 
-                <Footer className="border-t border-[#213448]/5 mt-20 pb-20" />
-            </main >
+                <Footer className="mt-auto" />
+            </main>
 
             <LoginModal
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
                 onLogin={handleConnectGoogle}
             />
-        </div >
+        </div>
     );
 }
+
