@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- GitHub Dark Background Gradient -->
+    <linearGradient id="ghBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161B22" />
+      <stop offset="100%" stop-color="#0D1117" />
+    </linearGradient>
+
+    <!-- Subtle GitHub Border -->
+    <linearGradient id="ghRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#30363D" />
+      <stop offset="100%" stop-color="#21262D" />
+    </linearGradient>
+  </defs>
+
+  <!-- GitHub Circular Badge Base -->
+  <circle cx="256" cy="256" r="240" fill="url(#ghBg)" stroke="url(#ghRing)" stroke-width="12" />
+
+  <!-- GitHub + Email Silhouette Mark (White Silhouette with Negative-Space Cuts) -->
+  <g id="github-email-mark">
+    <!-- Main White Silhouette Body with Octocat Ears -->
+    <path
+      d="
+        M 104 224
+        C 104 176 116 140 148 112
+        C 162 100 178 94 192 106
+        C 210 122 226 148 256 148
+        C 286 148 302 122 320 106
+        C 334 94 350 100 364 112
+        C 396 140 408 176 408 224
+        L 408 344
+        C 408 376 384 400 352 400
+        L 160 400
+        C 128 400 104 376 104 344
+        Z
+      "
+      fill="#FFFFFF"
+    />
+
+    <!-- Envelope Flap V-Line Cut (Negative Space #0D1117) -->
+    <path
+      d="
+        M 124 200
+        L 244 300
+        C 252 306 260 306 268 300
+        L 388 200
+      "
+      fill="none"
+      stroke="#0D1117"
+      stroke-width="22"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Diagonal Bottom Envelope Creases (Negative Space #0D1117) -->
+    <path
+      d="M 124 378 L 222 292"
+      fill="none"
+      stroke="#0D1117"
+      stroke-width="16"
+      stroke-linecap="round"
+    />
+    <path
+      d="M 388 378 L 290 292"
+      fill="none"
+      stroke="#0D1117"
+      stroke-width="16"
+      stroke-linecap="round"
+    />
+
+    <!-- Center Flap Accent / Beacon Cut (Negative Space #0D1117) -->
+    <circle cx="256" cy="220" r="14" fill="#0D1117" />
+  </g>
+</svg>

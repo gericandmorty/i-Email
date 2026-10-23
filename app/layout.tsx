@@ -13,12 +13,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "iEmail",
-  description: "Elegant bulk email dispatching",
+  title: "iEmail - Smart Personalized Bulk Email Dispatch",
+  description: "Send personalized emails with ease via Gmail and Google Workspace",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   verification: {
     google: "QZ2EkMey0H091I5HtTVe0qIZHNZ7MnpCaJhxO_HpfNM",
   },
 };
+
+import { ToastContainer } from "@/components/Toast";
 
 export default function RootLayout({
   children,
@@ -31,6 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <ToastContainer />
       </body>
     </html>
   );
