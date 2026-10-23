@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
 import { TemplatesView } from './TemplatesView';
 import { toast } from './Toast';
+import { BrandLogo } from './BrandLogo';
 
 interface GoogleAccount {
     email: string;
@@ -524,8 +525,8 @@ export default function IEmail({
                     <Menu size={18} />
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-[#21262D] text-[#58A6FF] rounded border border-[#30363D] flex items-center justify-center">
-                        <Mail size={13} />
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center">
+                        <BrandLogo size={24} />
                     </div>
                     <span className="text-xs font-semibold text-[#E6EDF3]">iEmail</span>
                 </div>

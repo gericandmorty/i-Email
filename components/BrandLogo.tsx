@@ -10,10 +10,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ size = 20, className = "" 
         <svg
             width={size}
             height={size}
+            style={{ minWidth: size, minHeight: size }}
             viewBox="0 0 512 512"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={className}
+            className={`shrink-0 ${className}`.trim()}
         >
             <circle cx="256" cy="256" r="240" fill="#161B22" stroke="#30363D" strokeWidth="16" />
             <path

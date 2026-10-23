@@ -84,7 +84,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunch, onLogin }) =
                                 </button>
                             </div>
 
-                            <div className="flex items-center justify-center lg:justify-start gap-6 pt-4 text-xs text-[#8B949E]">
+                            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 pt-4 text-xs text-[#8B949E]">
                                 <span className="flex items-center gap-1.5">
                                     <Check size={14} className="text-[#3FB950]" /> Free to use
                                 </span>
@@ -111,29 +111,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunch, onLogin }) =
                                         <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
                                         <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
                                         <div className="w-2.5 h-2.5 rounded-full bg-[#30363D]" />
-                                        <span className="ml-2 text-[11px] font-mono text-[#8B949E]">iEmail — New Message</span>
+                                        <span className="ml-2 text-[11px] font-mono text-[#8B949E] truncate">iEmail — New Message</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 shrink-0">
                                         <span className="w-2 h-2 rounded-full bg-[#3FB950]" />
-                                        <span className="text-[10px] text-[#8B949E]">Google account connected</span>
+                                        <span className="text-[10px] text-[#8B949E] hidden xs:inline">Google connected</span>
                                     </div>
                                 </div>
 
                                 {/* Mock Interface Contents */}
                                 <div className="p-4 sm:p-5 space-y-4 font-sans text-xs">
                                     {/* Top Step Bar */}
-                                    <div className="flex items-center justify-between p-2.5 bg-[#0D1117] rounded-md border border-[#30363D]">
-                                        <div className="flex items-center gap-2 text-[#3FB950]">
+                                    <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[#0D1117] rounded-md border border-[#30363D] overflow-x-auto gap-2 text-[11px] sm:text-xs">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 text-[#3FB950] shrink-0">
                                             <CheckCircle2 size={13} />
-                                            <span className="font-medium">1. Contacts (148 added)</span>
+                                            <span className="font-medium">1. Contacts</span>
                                         </div>
-                                        <div className="h-3 w-px bg-[#30363D]" />
-                                        <div className="flex items-center gap-2 text-[#58A6FF] font-semibold">
+                                        <div className="h-3 w-px bg-[#30363D] shrink-0" />
+                                        <div className="flex items-center gap-1.5 sm:gap-2 text-[#58A6FF] font-semibold shrink-0">
                                             <span className="w-4 h-4 rounded-full bg-[#58A6FF]/20 flex items-center justify-center text-[10px]">2</span>
                                             <span>2. Write Message</span>
                                         </div>
-                                        <div className="h-3 w-px bg-[#30363D]" />
-                                        <div className="flex items-center gap-2 text-[#8B949E]">
+                                        <div className="h-3 w-px bg-[#30363D] shrink-0" />
+                                        <div className="flex items-center gap-1.5 sm:gap-2 text-[#8B949E] shrink-0">
                                             <span className="w-4 h-4 rounded-full bg-[#21262D] flex items-center justify-center text-[10px]">3</span>
                                             <span>3. Preview & Send</span>
                                         </div>

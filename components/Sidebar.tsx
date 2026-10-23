@@ -67,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onMobileMenuToggle
 }) => {
     const [isAccountPickerOpen, setIsAccountPickerOpen] = useState(false);
+    const showFullLabels = isSidebarExpanded || isMobileMenuOpen;
     const activeAccount = connectedAccounts.find(a => a.email?.toLowerCase() === senderEmail?.toLowerCase());
     const fullName = activeAccount?.name || senderName || 'Connected User';
     const profilePicture = activeAccount?.picture || senderPicture;
@@ -83,6 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick: () => {
                 setView('wizard');
                 setStep(1);
+                if (isMobileMenuOpen && onMobileMenuToggle) onMobileMenuToggle();
             }
         },
         {
@@ -97,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 if (file) {
                     setView('wizard');
                     setStep(2);
+                    if (isMobileMenuOpen && onMobileMenuToggle) onMobileMenuToggle();
                 }
             }
         },
@@ -112,6 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 if (file && subject && body) {
                     setView('wizard');
                     setStep(3);
+                    if (isMobileMenuOpen && onMobileMenuToggle) onMobileMenuToggle();
                 }
             }
         }
@@ -134,54 +138,73 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <aside
                 className={cn(
-                    "fixed lg:sticky top-0 inset-y-0 left-0 z-[101] bg-[#161B22] border-r border-[#30363D] flex flex-col transition-all duration-200 select-none",
-                    isSidebarExpanded ? "w-64" : "w-16",
+                    "fixed lg:sticky top-0 inset-y-0 left-0 z-[101] bg-[#161B22] border-r border-[#30363D] flex flex-col transition-all duration-200 select-none w-72 max-w-[85vw]",
+                    isSidebarExpanded ? "lg:w-64" : "lg:w-16",
                     isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
                 )}
             >
                 {/* Header */}
-                <div className="h-14 border-b border-[#30363D] flex items-center justify-between px-3.5 shrink-0">
-                    <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shrink-0">
-                            <BrandLogo size={28} />
-                        </div>
-                        {isSidebarExpanded && (
-                            <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-xs tracking-tight text-[#E6EDF3] truncate">
-                                    iEmail
-                                </span>
-                                <span className="text-[10px] text-[#8B949E] truncate">
-                                    Bulk email sender
-                                </span>
+                <div className={cn(
+                    "h-14 border-b border-[#30363D] flex items-center shrink-0 transition-all",
+                    showFullLabels ? "justify-between px-3.5" : "justify-center px-2"
+                )}>
+                    {showFullLabels ? (
+                        <>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                                    <BrandLogo size={28} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="font-semibold text-xs tracking-tight text-[#E6EDF3] truncate">
+                                        iEmail
+                                    </span>
+                                    <span className="text-[10px] text-[#8B949E] truncate">
+                                        Bulk email sender
+                                    </span>
+                                </div>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Toggle expand button (desktop) / close button (mobile) */}
-                    <div className="flex items-center">
+                            <div className="flex items-center shrink-0">
+                                <button
+                                    onClick={() => setIsSidebarExpanded(false)}
+                                    className="hidden lg:flex p-1.5 rounded-md text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
+                                    title="Collapse menu"
+                                >
+                                    <PanelLeftClose size={15} />
+                                </button>
+                                <button
+                                    onClick={onMobileMenuToggle}
+                                    className="lg:hidden p-1.5 rounded-md text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
+                                    aria-label="Close menu"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </>
+                    ) : (
                         <button
-                            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-                            className="hidden lg:flex p-1.5 rounded-md text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
-                            title={isSidebarExpanded ? "Collapse menu" : "Expand menu"}
+                            onClick={() => setIsSidebarExpanded(true)}
+                            className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-[#21262D] transition-colors group relative cursor-pointer shrink-0"
+                            title="Expand sidebar"
+                            aria-label="Expand sidebar"
                         >
-                            {isSidebarExpanded ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
+                            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+                                <BrandLogo size={28} />
+                            </div>
+                            <div className="absolute inset-0 rounded-lg flex items-center justify-center bg-[#161B22]/90 opacity-0 group-hover:opacity-100 transition-opacity text-[#58A6FF]">
+                                <PanelLeft size={16} />
+                            </div>
                         </button>
-                        <button
-                            onClick={onMobileMenuToggle}
-                            className="lg:hidden p-1.5 rounded-md text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
+                    )}
                 </div>
 
                 {/* Account & Profile Switcher */}
                 <div className="p-3 border-b border-[#30363D] relative shrink-0">
                     <div
-                        onClick={() => isSidebarExpanded && setIsAccountPickerOpen(!isAccountPickerOpen)}
+                        onClick={() => showFullLabels && setIsAccountPickerOpen(!isAccountPickerOpen)}
                         className={cn(
                             "flex items-center gap-2.5 p-1.5 rounded-md border border-[#30363D] bg-[#0D1117] transition-colors",
-                            isSidebarExpanded ? "cursor-pointer hover:border-[#58A6FF]/40" : "justify-center"
+                            showFullLabels ? "cursor-pointer hover:border-[#58A6FF]/40" : "justify-center"
                         )}
                     >
                         <div className="w-6 h-6 rounded-full bg-[#21262D] border border-[#30363D] overflow-hidden flex items-center justify-center shrink-0">
@@ -192,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             )}
                         </div>
 
-                        {isSidebarExpanded && (
+                        {showFullLabels && (
                             <>
                                 <div className="flex-1 min-w-0">
                                     <div className="text-xs font-medium text-[#E6EDF3] truncate leading-tight">
@@ -209,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Account picker dropdown */}
                     <AnimatePresence>
-                        {isAccountPickerOpen && isSidebarExpanded && (
+                        {isAccountPickerOpen && showFullLabels && (
                             <motion.div
                                 initial={{ opacity: 0, y: 4 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -278,7 +301,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex-1 overflow-y-auto p-2 space-y-5 custom-scrollbar">
                     {/* Workflow section */}
                     <div className="space-y-1">
-                        {isSidebarExpanded && (
+                        {showFullLabels && (
                             <div className="px-2.5 py-1 text-[11px] font-semibold text-[#8B949E] tracking-wider uppercase">
                                 Steps
                             </div>
@@ -296,7 +319,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         : "text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/50 font-normal",
                                     item.disabled && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#8B949E]"
                                 )}
-                                title={!isSidebarExpanded ? item.name : undefined}
+                                title={!showFullLabels ? item.name : undefined}
                             >
                                 {item.active && (
                                     <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#58A6FF] rounded-r" />
@@ -304,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                                 <item.icon size={15} className={cn("shrink-0", item.active ? "text-[#58A6FF]" : "")} />
 
-                                {isSidebarExpanded && (
+                                {showFullLabels && (
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between">
                                             <span className="truncate">{item.name}</span>
@@ -323,27 +346,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Templates section */}
                     <div className="space-y-1">
-                        {isSidebarExpanded && (
+                        {showFullLabels && (
                             <div className="px-2.5 py-1 text-[11px] font-semibold text-[#8B949E] tracking-wider uppercase">
                                 Saved Work
                             </div>
                         )}
 
                         <button
-                            onClick={() => setView('templates')}
+                            onClick={() => {
+                                setView('templates');
+                                if (isMobileMenuOpen && onMobileMenuToggle) onMobileMenuToggle();
+                            }}
                             className={cn(
                                 "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs transition-colors relative text-left",
                                 view === 'templates'
                                     ? "bg-[#21262D] text-[#E6EDF3] font-semibold"
                                     : "text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/50 font-normal"
                             )}
-                            title={!isSidebarExpanded ? "Templates" : undefined}
+                            title={!showFullLabels ? "Templates" : undefined}
                         >
                             {view === 'templates' && (
                                 <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-[#58A6FF] rounded-r" />
                             )}
                             <FileText size={15} className={cn("shrink-0", view === 'templates' ? "text-[#58A6FF]" : "")} />
-                            {isSidebarExpanded && (
+                            {showFullLabels && (
                                 <div className="flex-1 min-w-0">
                                     <span className="block truncate">Templates</span>
                                     <span className="text-[10px] text-[#8B949E] block truncate">
@@ -355,7 +381,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                     {/* Quick Recipient File Action */}
-                    {isSidebarExpanded && (
+                    {showFullLabels && (
                         <div className="p-2.5 rounded-md bg-[#0D1117] border border-[#30363D] space-y-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-medium text-[#E6EDF3]">Current File</span>
@@ -388,7 +414,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* Sidebar Bottom Footer */}
                 <div className="p-3 border-t border-[#30363D] shrink-0">
-                    {isSidebarExpanded ? (
+                    {showFullLabels ? (
                         <div className="flex items-center justify-between text-xs text-[#8B949E]">
                             <button
                                 onClick={() => handleLogout()}
